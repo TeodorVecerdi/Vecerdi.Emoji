@@ -1,0 +1,232 @@
+.title {
+    font-size: 19px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+#LogCategoriesLabel {
+    margin-top: 16px;
+    margin-bottom: 4px;
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+#LogCategoriesSearchField {
+    height: 24px;
+    width: auto;
+    margin-left: 0;
+    margin-bottom: 10px;
+}
+
+#LogCategoriesSearchField #unity-search {
+    margin-left: 4px;
+    margin-right: 6px;
+}
+
+#LogCategoriesSearchField #unity-cancel {
+    margin-right: 4px;
+}
+
+#LogCategoriesSearchField #unity-text-input {
+    font-size: 13px;
+}
+
+#Vecerdi-Logging-Settings {
+    padding: 10px 20px;
+    --property-field-label-width: 230px;
+}
+
+#GlobalLogLevel {
+    margin-left: 0;
+}
+
+#GlobalLogLevel Label {
+    min-width: var(--property-field-label-width);
+}
+
+#GlobalLogLevel Label, #GlobalLogLevel TextElement {
+    font-size: 14px;
+}
+
+#OverrideLogLevelInBuildsContainer {
+    flex-direction: row;
+    align-items: stretch;
+    margin-top: 1px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+#OverrideLogLevelInBuilds {
+    margin-left: 0;
+    height: 20px;
+    align-items: center;
+}
+
+#OverrideLogLevelInBuilds Label {
+    font-size: 14px;
+    min-width: 212px;
+}
+
+#OverrideLogLevelInBuilds #unity-checkmark {
+    height: 15px;
+    width: 15px;
+}
+
+#OverrideLogLevelInBuilds .unity-toggle__input {
+    flex-shrink: 1;
+    flex-grow: 0;
+    width: 15px;
+}
+
+#LogLevelInBuilds {
+    margin-left: 0;
+    flex-grow: 1;
+    height: 21px;
+}
+
+#LogLevelInBuilds TextElement {
+    font-size: 14px;
+}
+
+
+#CategoryNameTransforms {
+    margin-left: 0;
+}
+
+#CategoryNameTransforms Label {
+    min-width: var(--property-field-label-width);
+}
+
+#CategoryNameTransforms Label, #CategoryNameTransforms PopupTextElement {
+    font-size: 14px;
+}
+
+#EnableColoredOutputInEditor {
+    margin-left: 0;
+    height: 20px;
+    align-items: center;
+}
+
+#EnableColoredOutputInEditor Label {
+    min-width: var(--property-field-label-width);
+}
+
+#EnableColoredOutputInEditor Label, #EnableColoredOutputInEditor #unity-checkmark {
+    font-size: 14px;
+    height: 15px;
+    width: 15px;
+}
+
+#NoCategoriesLabel {
+    font-size: 15px;
+    white-space: normal;
+    -unity-paragraph-spacing: 16px;
+}
+
+#NoCategoriesCodeLabel {
+    font-size: 13px;
+    padding: 12px 16px;
+    background-color: #262626;
+    border-radius: 8px;
+    margin-top: 8px;
+    white-space: normal;
+    -unity-paragraph-spacing: 24px;
+    cursor: text;
+}
+
+#LogCategoriesListHeader {
+    flex-direction: row;
+    background-color: #323232;
+
+    border-bottom-width: 1px;
+    border-bottom-color: #222;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+
+    height: 30px;
+    min-height: 30px;
+}
+
+#LogCategoriesListHeader Label {
+    -unity-font-style: bold;
+    font-size: 14px;
+    padding: 6px 6px;
+}
+
+#LogCategoriesListHeader .category-list-header__category-name {
+    flex-grow: 1;
+}
+
+#LogCategoriesListHeader .category-list-header__log-level {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 200px;
+    border-left-width: 1px;
+    border-left-color: #222;
+}
+
+#LogCategoriesListHeader #category-list-header__sorting {
+    position: absolute;
+    right: 4px;
+    height: 16px;
+    width: 16px;
+}
+
+#LogCategoriesListHeader #category-list-header__sorting.ascending {
+    background-image: resource("d_icon dropdown@2x");
+    scale: 1 -1 1;
+}
+
+#LogCategoriesListHeader #category-list-header__sorting.descending {
+    background-image: resource("d_icon dropdown@2x");
+}
+
+#LogCategoriesListFooter {
+    flex-direction: row;
+    justify-content: flex-end;
+    background-color: #323232;
+
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding: 4px 4px;
+
+    height: 24px;
+    min-height: 24px;
+}
+
+#LogCategoriesListFooter Label {
+    font-size: 11px;
+    opacity: 0.5;
+}
+
+#LogCategoriesListView .category-list__row-container {
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+}
+
+#LogCategoriesListView .category-list__category-name {
+    margin: 0;
+    flex-grow: 1;
+    border-radius: 0;
+    opacity: 0.7;
+}
+
+#LogCategoriesListView .category-list__category-name TextInput {
+    margin: 0;
+    border-radius: 0;
+    font-size: 13px;
+}
+
+#LogCategoriesListView .category-list__log-level {
+    margin: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 200px;
+    border-radius: 0;
+}
+
+#LogCategoriesListView .category-list__log-level .unity-enum-field__input {
+    border-radius: 0;
+    font-size: 13px;
+}

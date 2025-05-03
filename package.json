@@ -1,0 +1,28 @@
+﻿{
+    "name": "ai.vecerdi.emoji",
+    "version": "1.0.0",
+    "displayName": "Emoji Support for Unity",
+    "description": "A package for handling emoji functionality in Unity",
+    "unity": "6000.1",
+    "changelogUrl": "https://github.com/TeodorVecerdi/Vecerdi.Emoji/blob/main/CHANGELOG.md",
+    "licensesUrl": "https://github.com/TeodorVecerdi/Vecerdi.Emoji/blob/main/LICENSE",
+    "dependencies": {},
+    "keywords": [
+        "emoji",
+        "unicode",
+        "text",
+        "ui"
+    ],
+    "author": {
+        "name": "Teodor Vecerdi",
+        "email": "teodor@vecerdi.ai",
+        "url": "https://vecerdi.ai"
+    },
+    "samples": [
+        {
+            "displayName": "Vecerdi.Logging Dependency",
+            "description": "Adds the required logging dependency that this package uses.",
+            "path": "Samples~/Vecerdi.Logging Dependency"
+        }
+    ]
+}
