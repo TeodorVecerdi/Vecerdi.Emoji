@@ -27,8 +27,8 @@ Alternatively, add the following to your `manifest.json`:
 }
 ```
 
-This package depends on [Vecerdi.Logging](https://www.nuget.org/packages/Vecerdi.Logging) and its [Unity integration](https://github.com/TeodorVecerdi/Vecerdi.Logging).\
-I included a "Vecerdi.Logging Dependency" sample that you can import through the Package Manager to easily add the dependency to your project.
+⚠️ **Important:** This package depends on [Vecerdi.Logging](https://www.nuget.org/packages/Vecerdi.Logging) and its [Unity integration](https://github.com/TeodorVecerdi/Vecerdi.Logging).\
+I included a "Vecerdi.Logging Dependency" sample that you can import through the Package Manager to easily add the dependency to your project. I recommend importing that.
 
 ## Getting Started with an Emoji Pack
 
@@ -36,17 +36,16 @@ Ready-to-use emoji sprite packs are available as GitHub releases. These packs in
 
 ### Available Packs
 
-1. **Microsoft Fluent UI Emoji Pack** (MIT License)
-   - Complete set of Microsoft Fluent UI emojis
-   - Full support for common emoji sequences
-   - Can be used in commercial applications
-   - [Download from GitHub Releases](https://github.com/TeodorVecerdi/Vecerdi.Emoji/releases)
+1. **Microsoft Fluent UI (3D) Emoji Pack** (MIT License)
+   - Complete set of Microsoft Fluent UI (3D) emojis
+   - Can be used in any application
+   - [Download from GitHub Releases](https://github.com/TeodorVecerdi/Vecerdi.Emoji/releases/tag/emoji-pack-fluentui)
 
-2. **Extended Emoji Pack** (For Educational Purposes Only)
-   - Microsoft Fluent UI emojis
-   - Apple Inc. Flag Emojis
+2. **Extended Emoji Pack** (for educational purposes only)
+   - Microsoft Fluent UI (3D) emojis
+   - Apple Flag emojis
    - ⚠️ **Important:** Apple emojis are included for educational purposes only. Using Apple emojis in a commercial application may violate copyright laws. Apple is a trademark of Apple Inc., registered in the U.S. and other countries.
-   - [Download from GitHub Releases](https://github.com/TeodorVecerdi/Vecerdi.Emoji/releases)
+   - [Download from GitHub Releases](https://github.com/TeodorVecerdi/Vecerdi.Emoji/releases/tag/emoji-pack-extended)
 
 ### Importing Emoji Packs
 
