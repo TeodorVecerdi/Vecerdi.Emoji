@@ -1,5 +1,7 @@
 # Emoji Support for Unity
 
+![Banner](https://github.com/user-attachments/assets/b97f76df-c4f7-4d62-89ea-53fc4114e5b1)
+
 A lightweight package for handling emoji functionality in Unity games. This package provides tools to process, convert, and display emoji characters in Unity UI elements.
 
 This is currently intended to be used with TextMeshPro labels as it renders emojis using `<sprite>` tags, but I may make it more generic in the future.
