@@ -1,6 +1,6 @@
 ﻿{
     "name": "ai.vecerdi.emoji",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "displayName": "Emoji Support for Unity",
     "description": "A package for handling emoji functionality in Unity",
     "unity": "2022.3",
