@@ -13,3 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core emoji processing functionality
 - Emoji conversion utilities
 - Fallback system for unsupported emoji
+
+## [1.0.1] - 2025-05-04
+
+### Changed
+
+- Remove required dependency on `Vecerdi.Logging`
+  - This can be enabled manually if preferred by adding `ENABLE_VECERDI_LOGGING` to scripting define symbols and adding the required NuGet and Unity package.
+
+### Removed
+
+- Remove sample for the Vecerdi.Logging dependency
