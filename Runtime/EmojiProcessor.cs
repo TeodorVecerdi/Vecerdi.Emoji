@@ -47,28 +47,25 @@ namespace Vecerdi.Emoji {
         /// <summary>
         /// Applies rule-based fallback to complex emoji sequences
         /// </summary>
-        public static string[] GetFallbackEmojis(string? emoji, out string? contextFormat) {
-            // TODO: We are allocating arrays when most of the paths return an empty array or a single element array.
-            contextFormat = null;
+        public static EmojiFallbackResult GetFallback(string? emoji) {
             if (string.IsNullOrEmpty(emoji))
-                return Array.Empty<string>();
+                return EmojiFallbackResult.Empty;
 
             var codepoints = emoji.Codepoints().ToList();
             if (codepoints.Count == 0)
-                return Array.Empty<string>();
+                return EmojiFallbackResult.Empty;
 
             // RULE 1: Family emoji sequences (contain multiple people connected by ZWJ)
             if (codepoints.Contains(Codepoints.ZWJ) && IsFamilyEmoji(codepoints)) {
                 // Individual people
-                contextFormat = "<f:{0}>";
                 var zwjCount = codepoints.Count(cp => cp == Codepoints.ZWJ);
 
-                var result = new string[zwjCount + 1];
+                var result = new List<string>(zwjCount + 1);
                 var valueStringBuilder = new ValueStringBuilder(stackalloc char[1024]);
-                var resultIndex = 0;
+
                 foreach (var codepoint in codepoints) {
                     if (codepoint == Codepoints.ZWJ) {
-                        result[resultIndex++] = valueStringBuilder.AsSpan().ToString();
+                        result.Add(valueStringBuilder.AsSpan().ToString());
                         valueStringBuilder.Length = 0;
                         continue;
                     }
@@ -76,16 +73,16 @@ namespace Vecerdi.Emoji {
                     valueStringBuilder.Append(codepoint.AsString());
                 }
 
-                result[resultIndex] = valueStringBuilder.AsSpan().ToString();
+                result.Add(valueStringBuilder.AsSpan().ToString());
                 valueStringBuilder.Dispose();
 
-                return result;
+                return new EmojiFallbackResult(result, EmojiFallbackRule.Family);
             }
 
             // RULE 2: Professional/occupation emojis
             if (codepoints.Contains(Codepoints.ZWJ) && HasProfessionIndicator(codepoints)) {
                 // TODO: Preserve person emoji modifiers (e.g., skin tone)
-                contextFormat = "<p:{0}>";
+
                 // Find the person emoji in the sequence (typically the first one)
                 var personCodepoint = codepoints.FirstOrDefault(IsGenderSpecific);
                 if (personCodepoint.Value == 0) {
@@ -95,31 +92,37 @@ namespace Vecerdi.Emoji {
                 // Find the profession emoji
                 var professionCodepoint = codepoints.FirstOrDefault(IsProfessionIndicator);
                 if (professionCodepoint.Value != 0) {
-                    return new[] { personCodepoint.AsString(), professionCodepoint.AsString() };
+                    return new EmojiFallbackResult(
+                        new[] { personCodepoint.AsString(), professionCodepoint.AsString() },
+                        EmojiFallbackRule.Profession
+                    );
                 }
 
                 // If no profession emoji is found, return the person emoji
-                return new[] { personCodepoint.AsString() };
+                return new EmojiFallbackResult(personCodepoint.AsString(), EmojiFallbackRule.Profession);
             }
 
             // RULE 3: Remove skin tone modifiers
             if (codepoints.Any(cp => NeoEmoji.SkinTones.All.Contains(cp))) {
-                return new[] {
-                    string.Concat(codepoints
-                        .Where(cp => !NeoEmoji.SkinTones.All.Contains(cp))
-                        .Select(cp => char.ConvertFromUtf32((int)cp.Value))),
-                };
+                var fallbackEmoji = string.Concat(codepoints
+                    .Where(cp => !NeoEmoji.SkinTones.All.Contains(cp))
+                    .Select(cp => char.ConvertFromUtf32((int)cp.Value)));
+
+                return new EmojiFallbackResult(fallbackEmoji, EmojiFallbackRule.SkinTone);
             }
 
             // RULE 4: Gender-specific to gender-neutral
             if (codepoints.Count == 1 && IsGenderSpecific(codepoints[0])) {
-                return new[] { char.ConvertFromUtf32(GetGenderNeutral(codepoints[0])) };
+                return new EmojiFallbackResult(
+                    char.ConvertFromUtf32(GetGenderNeutral(codepoints[0])),
+                    EmojiFallbackRule.GenderNeutral
+                );
             }
 
             // RULE 5: If the sequence starts with a flag (`🏳`) - could fall back to a generic flag or globe
             if ((codepoints.Count > 0 && codepoints[0].Value is 0x1F3F3) || IsFlag(codepoints)) {
                 Log.Debug($"Emoji sequence starts with flag, falling back to globe: {string.Concat(codepoints.Select(cp => cp.AsString()))}", EmojiLogging.Category);
-                return new[] { "🌐" }; // 🌐 Globe with meridians
+                return new EmojiFallbackResult("🌐", EmojiFallbackRule.Flag); // 🌐 Globe with meridians
             }
 
             // RULE 6: For ZWJ sequences not handled above, take the first emoji
@@ -128,12 +131,33 @@ namespace Vecerdi.Emoji {
                 var firstEmojiEnd = codepoints.IndexOf(Codepoints.ZWJ);
                 if (firstEmojiEnd > 0) {
                     // Return just the first part before ZWJ
-                    return new[] { string.Concat(codepoints.Take(firstEmojiEnd).Select(cp => cp.AsString())) };
+                    var firstPartEmoji = string.Concat(codepoints.Take(firstEmojiEnd).Select(cp => cp.AsString()));
+                    return new EmojiFallbackResult(firstPartEmoji, EmojiFallbackRule.ZwjSequence);
                 }
             }
 
-            // If no rules apply, return the original emoji
-            return new[] { emoji };
+            // If no rules apply, return an empty result
+            return EmojiFallbackResult.Empty;
+        }
+
+        /// <summary>
+        /// Legacy method for backward compatibility. Use GetFallback instead.
+        /// </summary>
+        [Obsolete("Use GetFallback instead")]
+        public static string[] GetFallbackEmojis(string? emoji, out string? contextFormat) {
+            var result = GetFallback(emoji);
+
+            // Convert rule to the old format string for backward compatibility
+            contextFormat = result.Rule switch {
+                EmojiFallbackRule.Family => "<f:{0}>",
+                EmojiFallbackRule.Profession => "<p:{0}>",
+                _ => null,
+            };
+
+            if (!result.HasFallback)
+                return Array.Empty<string>();
+
+            return result.SingleEmoji is not null ? new[] { result.SingleEmoji } : result.Emojis!.ToArray();
         }
 
         /// <summary>

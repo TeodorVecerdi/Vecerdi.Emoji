@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Vecerdi.Logging;
 
@@ -29,35 +30,29 @@ namespace Vecerdi.Emoji {
             while (emoji != currentEmoji && !m_AvailableEmojis.Contains(emojiCode)) {
                 currentEmoji = emoji;
 
-                var emojis = EmojiProcessor.GetFallbackEmojis(emoji, out var context).ToList();
-                switch (emojis.Count) {
-                    // Failed to find a fallback emoji
-                    case 0: {
-                        Log.Debug($"No fallback emoji found for {emoji} ({emojiCode})", EmojiLogging.Category);
-                        return null;
-                    }
-                    // Found a single fallback emoji
-                    case 1: {
-                        emoji = emojis[0];
-                        if (emoji == currentEmoji) {
-                            Log.Debug($"No fallback emoji found for {emoji} ({emojiCode})", EmojiLogging.Category);
-                            return null;
-                        }
-
-                        emojiCode = EmojiCode.FromLiteral(emoji);
-                        continue;
-                    }
-                    // Found multiple fallback emojis
-                    default: {
-                        if (context is not null) {
-                            Log.Debug($"Fallback emoji {emoji} ({emojiCode}): {string.Join(", ", emojis)}", EmojiLogging.Category);
-                            return string.Format(context, string.Join("", emojis.Select(GetSpriteTagForEmoji)));
-                        }
-
-                        Log.Debug($"Fallback emoji {emoji} ({emojiCode}): {string.Join(", ", emojis)}", EmojiLogging.Category);
-                        return string.Join("", emojis.Select(GetSpriteTagForEmoji));
-                    }
+                var emojis = EmojiProcessor.GetFallback(emoji);
+                if (!emojis.HasFallback) {
+                    Log.Debug($"No fallback emoji found for {emoji} ({emojiCode})", EmojiLogging.Category);
+                    return null;
                 }
+
+                // Single emoji
+                if (emojis.SingleEmoji is not null) {
+                    emoji = emojis.SingleEmoji;
+                    emojiCode = EmojiCode.FromLiteral(emoji);
+                    continue;
+                }
+
+                // Multiple emojis
+                Debug.Assert(emojis.Emojis is not null);
+                Log.Debug($"Fallback emoji {emoji} ({emojiCode}): {string.Join(", ", emojis.Emojis)}", EmojiLogging.Category);
+
+                // Apply appropriate formatting based on the rule
+                return emojis.Rule switch {
+                    EmojiFallbackRule.Family => $"<f:{string.Join("", emojis.Emojis.Select(GetSpriteTagForEmoji))}>",
+                    EmojiFallbackRule.Profession => $"<p:{string.Join("", emojis.Emojis.Select(GetSpriteTagForEmoji))}>",
+                    _ => string.Join("", emojis.Emojis.Select(GetSpriteTagForEmoji)),
+                };
             }
 
             if (!m_AvailableEmojis.Contains(emojiCode) && emojiCode.Value.Contains('-')) {
