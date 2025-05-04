@@ -10,6 +10,11 @@ This is currently intended to be used with TextMeshPro labels as it renders emoj
 - Support for compound emoji sequences (skin tones, ZWJ sequences, country flags, etc.)
 - Fallback system for unsupported emoji characters based on your emoji sprite assets
 
+## Requirements
+
+- Tested with Unity 2022.3, 6000.0, and 6000.1
+- TextMeshPro package for the included emoji packs and for the package to be useful as it assumes you intend to use it with TextMeshPro labels
+
 ## Installation
 
 1. In your Unity project, open the Package Manager
@@ -98,11 +103,6 @@ public class EmojiManager : MonoBehaviour
     }
 }
 ```
-
-## Requirements
-
-- Tested with Unity 2022.3, 6000.0, and 6000.1
-- TextMeshPro package for the included emoji sprite assets
 
 ## License
 
