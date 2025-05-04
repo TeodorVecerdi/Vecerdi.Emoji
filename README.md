@@ -27,9 +27,6 @@ Alternatively, add the following to your `manifest.json`:
 }
 ```
 
-⚠️ **Important:** This package depends on [Vecerdi.Logging](https://www.nuget.org/packages/Vecerdi.Logging) and its [Unity integration](https://github.com/TeodorVecerdi/Vecerdi.Logging).\
-I included a "Vecerdi.Logging Dependency" sample that you can import through the Package Manager to easily add the dependency to your project. I recommend importing that.
-
 ## Getting Started with an Emoji Pack
 
 Ready-to-use emoji sprite packs are available as GitHub releases. These packs include pre-configured TextMeshPro sprite assets with a comprehensive collection of emoji sprites.
@@ -104,9 +101,7 @@ public class EmojiManager : MonoBehaviour
 
 ## Requirements
 
-- [Vecerdi.Logging](https://www.nuget.org/packages/Vecerdi.Logging) and its [Unity integration](https://github.com/TeodorVecerdi/Vecerdi.Logging)
-  - You can also import the "Vecerdi.Logging Dependency" sample through the Package Manager
-- Unity 6000.1 or newer (though it likely works with lower versions too)
+- Tested with Unity 2022.3, 6000.0, and 6000.1
 - TextMeshPro package for the included emoji sprite assets
 
 ## License
