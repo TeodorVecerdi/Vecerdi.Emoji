@@ -17,12 +17,5 @@
         "name": "Teodor Vecerdi",
         "email": "teodor@vecerdi.ai",
         "url": "https://vecerdi.ai"
-    },
-    "samples": [
-        {
-            "displayName": "Vecerdi.Logging Dependency",
-            "description": "Adds the required logging dependency that this package uses.",
-            "path": "Samples~/Vecerdi.Logging Dependency"
-        }
-    ]
+    }
 }
