@@ -5,9 +5,9 @@ using Vecerdi.Logging;
 namespace Vecerdi.Emoji {
     public sealed class EmojiProcessingManager {
         private readonly Dictionary<string, string> m_EmojiToSpriteIdCache = new();
-        private readonly HashSet<EmojiCode> m_AvailableEmojis;
+        private readonly ISet<EmojiCode> m_AvailableEmojis;
 
-        public EmojiProcessingManager(HashSet<EmojiCode> availableEmojis) {
+        public EmojiProcessingManager(ISet<EmojiCode> availableEmojis) {
             m_AvailableEmojis = availableEmojis;
         }
 
