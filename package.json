@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "displayName": "Emoji Support for Unity",
     "description": "A package for handling emoji functionality in Unity",
-    "unity": "6000.1",
+    "unity": "2022.3",
     "changelogUrl": "https://github.com/TeodorVecerdi/Vecerdi.Emoji/blob/main/CHANGELOG.md",
     "licensesUrl": "https://github.com/TeodorVecerdi/Vecerdi.Emoji/blob/main/LICENSE",
     "dependencies": {},
