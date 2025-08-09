@@ -1,1 +1,1 @@
--nullable:enable -warnaserror -langversion:10
+@Assets/../Build/FirstParty.csc.rsp
