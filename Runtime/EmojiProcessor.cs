@@ -2,45 +2,101 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using NeoSmart.Unicode;
 using Vecerdi.Emoji.Text;
 using Vecerdi.Logging;
-using Range = System.Range;
 using NeoEmoji = NeoSmart.Unicode.Emoji;
 
 namespace Vecerdi.Emoji {
     public static class EmojiProcessor {
+        private const char ZeroWidthJoiner = (char)0x200D;
+        private const int VariationSelector16 = 0xFE0F;
+        private const int CombiningKeycap = 0x20E3;
+        private const int SkinToneFirst = 0x1F3FB; // NeoEmoji.SkinTones.All is exactly U+1F3FB..U+1F3FF
+        private const int SkinToneLast = 0x1F3FF;
+        private const int RegionalIndicatorFirst = 0x1F1E6;
+        private const int RegionalIndicatorLast = 0x1F1FF;
+
         /// <summary>
         /// Replaces all emojis in a string with sprite tags
         /// </summary>
+        /// <remarks>
+        /// Returns the <paramref name="input"/> instance itself when nothing needs replacing — in particular for
+        /// text containing no character that could start an emoji (no codepoint below U+200D can), which makes
+        /// re-scanning streamed plain-text prefixes allocation-free. Unpaired surrogates pass through as text.
+        /// </remarks>
         [return: NotNullIfNotNull("input")]
         public static string? ProcessEmojis(string? input, Func<string, string?> processEmoji) {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            var result = new StringBuilder();
-            var sequence = input.AsUnicodeSequence();
-
-            // Process the sequence grapheme by grapheme
+            var span = input.AsSpan();
+            var result = default(ValueStringBuilder);
+            var changed = false;
+            var runStart = 0; // start of the pending verbatim slice of the input
             var i = 0;
-            var codepoints = sequence.Codepoints.ToArray().AsSpan();
-            while (i < codepoints.Length) {
-                var (codepointRange, isEmoji) = ExtractGrapheme(codepoints, ref i);
-                if (isEmoji) {
-                    var emoji = CodepointsToString(codepoints[codepointRange]);
-                    if (NeoEmoji.IsEmoji(emoji)) {
-                        var processedEmoji = processEmoji(emoji);
-                        if (processedEmoji is not null)
-                            result.Append(processedEmoji);
-                        continue;
-                    }
+
+            while (i < span.Length) {
+                var c = span[i];
+                if (c < ZeroWidthJoiner) {
+                    i++;
+                    continue;
                 }
 
-                result.Append(CodepointsToString(codepoints[codepointRange]));
+                int cp;
+                int cpLength;
+                if (char.IsHighSurrogate(c)) {
+                    if (i + 1 >= span.Length || !char.IsLowSurrogate(span[i + 1])) {
+                        i++;
+                        continue;
+                    }
+
+                    cp = char.ConvertToUtf32(c, span[i + 1]);
+                    cpLength = 2;
+                } else if (char.IsLowSurrogate(c)) {
+                    i++;
+                    continue;
+                } else {
+                    cp = c;
+                    cpLength = 1;
+                }
+
+                var graphemeStart = i;
+
+                if (cp is >= RegionalIndicatorFirst and <= RegionalIndicatorLast && IsRegionalIndicator(span, i + cpLength)) {
+                    // A pair of regional indicator symbols - a country flag (never extended further)
+                    i += cpLength + 2;
+                } else if (!EmojiRangeLookup.Contains((uint)cp)) {
+                    i += cpLength;
+                    continue;
+                } else {
+                    i += cpLength;
+                    ConsumeEmojiSequence(span, ref i);
+                }
+
+                var emoji = input.Substring(graphemeStart, i - graphemeStart);
+                if (!NeoEmoji.IsEmoji(emoji))
+                    continue; // suspected grapheme turned out not to be an emoji - stays in the verbatim run
+
+                var processedEmoji = processEmoji(emoji);
+                if (processedEmoji == emoji)
+                    continue; // replaced by itself - keep it in the verbatim run
+
+                if (!changed) {
+                    changed = true;
+                    result = new ValueStringBuilder(input.Length + 32);
+                }
+
+                result.Append(span[runStart..graphemeStart]);
+                if (processedEmoji is not null)
+                    result.Append(processedEmoji);
+                runStart = i;
             }
 
+            if (!changed)
+                return input;
+
+            result.Append(span[runStart..]);
             return result.ToString();
         }
 
@@ -161,78 +217,104 @@ namespace Vecerdi.Emoji {
         }
 
         /// <summary>
-        /// Extracts a complete emoji sequence (grapheme) from a list of codepoints, starting at the given index.
-        /// Updates the index to point to the first codepoint after the extracted sequence.
+        /// Checks whether a regional indicator symbol (always a surrogate pair) starts at <paramref name="index"/>.
         /// </summary>
-        /// <param name="codepoints">The list of codepoints to extract from</param>
-        /// <param name="index">The starting index, will be updated to point after the sequence</param>
-        /// <returns>A tuple containing the range of codepoints and a flag indicating if it's an emoji</returns>
-        private static (Range Range, bool IsEmoji) ExtractGrapheme(ReadOnlySpan<Codepoint> codepoints, ref int index) {
-            if (index >= codepoints.Length) {
-                return (new Range(index, index), false);
-            }
+        private static bool IsRegionalIndicator(ReadOnlySpan<char> span, int index) {
+            return index + 1 < span.Length
+                && char.IsHighSurrogate(span[index]) && char.IsLowSurrogate(span[index + 1])
+                && char.ConvertToUtf32(span[index], span[index + 1]) is >= RegionalIndicatorFirst and <= RegionalIndicatorLast;
+        }
 
-            var currentCp = codepoints[index];
-
-            // Check for Regional Indicator Symbols (country flags)
-            // Regional Indicator Symbols range from U+1F1E6 to U+1F1FF
-            var isRegionalIndicator = currentCp.Value is >= 0x1F1E6 and <= 0x1F1FF;
-            if (isRegionalIndicator && index + 1 < codepoints.Length) {
-                var nextCp = codepoints[index + 1];
-                if (nextCp.Value is >= 0x1F1E6 and <= 0x1F1FF) {
-                    // We have a pair of regional indicators - this is a country flag
-                    index += 2; // Skip both symbols
-                    return (new Range(index - 2, index), true);
-                }
-            }
-
-            // Check if this could be an emoji
-            var isEmoji = currentCp.Value >= 0x200D && Languages.Emoji.Contains(currentCp);
-            if (!isEmoji) {
-                index++;
-                return (new Range(index - 1, index), false);
-            }
-
-            var needsVS = Languages.ArabicNumerals.Contains(currentCp) || currentCp.Value is 0x23 or 0x2A;
-            if (needsVS && (index + 1 >= codepoints.Length || !IsVariationSelector(codepoints[index + 1]))) {
-                // If we need a variation selector but there's no one, this isn't an emoji
-                index++;
-                return (new Range(index - 1, index), false);
-            }
-
-            var startIndex = index;
-            index++;
-
+        /// <summary>
+        /// Advances <paramref name="index"/> past the components extending an emoji sequence whose base codepoint
+        /// was already consumed: variation selectors (VS16), skin-tone modifiers, keycaps, and ZWJ-joined emoji.
+        /// </summary>
+        private static void ConsumeEmojiSequence(ReadOnlySpan<char> span, ref int index) {
             var foundZwj = false;
 
-            // Collect all components of the emoji sequence
-            while (index < codepoints.Length) {
-                var cp = codepoints[index];
-                if (cp == NeoEmoji.VariationSelector) {
-                    index++;
-                } else if (NeoEmoji.SkinTones.All.Contains(cp)) {
-                    index++;
-                } else if (cp == NeoEmoji.ZeroWidthJoiner) {
+            while (index < span.Length) {
+                var c = span[index];
+                int cp;
+                int cpLength;
+                if (char.IsHighSurrogate(c)) {
+                    if (index + 1 >= span.Length || !char.IsLowSurrogate(span[index + 1]))
+                        break;
+
+                    cp = char.ConvertToUtf32(c, span[index + 1]);
+                    cpLength = 2;
+                } else if (char.IsLowSurrogate(c)) {
+                    break;
+                } else {
+                    cp = c;
+                    cpLength = 1;
+                }
+
+                if (cp is VariationSelector16 or CombiningKeycap or >= SkinToneFirst and <= SkinToneLast) {
+                    // Modifier - always part of the sequence
+                } else if (cp == ZeroWidthJoiner) {
                     foundZwj = true;
-                    index++;
-                } else if (cp == NeoEmoji.Keycap) {
-                    index++;
-                } else if (foundZwj && Languages.Emoji.Contains(cp)) {
+                } else if (foundZwj && EmojiRangeLookup.Contains((uint)cp)) {
                     // An emoji after a ZWJ - add it and continue building the sequence
                     foundZwj = false;
-                    index++;
                 } else {
                     // Not part of the emoji sequence
                     break;
                 }
-            }
 
-            return (new Range(startIndex, index), true);
+                index += cpLength;
+            }
         }
 
-        private static bool IsVariationSelector(Codepoint cp) {
-            // U+FE0x: VS1 through VS16
-            return cp.Value is >= 0xFE00 and <= 0xFE0F;
+        /// <summary>
+        /// Constant-time membership test for <see cref="Languages.Emoji"/>. <c>MultiRange.Contains</c> is a LINQ
+        /// scan over ~160 ranges that allocates an enumerator per call - far too hot for the per-codepoint scanning
+        /// path - so the ranges are flattened once into a BMP bitmask (8 KB) plus sorted astral range arrays.
+        /// </summary>
+        private static class EmojiRangeLookup {
+            private static readonly ulong[] s_BmpBits;
+            private static readonly uint[] s_AstralBegins;
+            private static readonly uint[] s_AstralEnds;
+
+            static EmojiRangeLookup() {
+                var bits = new ulong[0x10000 / 64];
+                var astral = new List<(uint Begin, uint End)>();
+
+                foreach (var range in Languages.Emoji.Ranges) {
+                    var begin = range.Begin.Value;
+                    var end = range.End.Value;
+                    if (begin <= 0xFFFF) {
+                        var bmpEnd = Math.Min(end, 0xFFFFu);
+                        for (var cp = begin; cp <= bmpEnd; cp++) {
+                            bits[cp >> 6] |= 1UL << (int)(cp & 63);
+                        }
+                    }
+
+                    if (end > 0xFFFF) {
+                        astral.Add((Math.Max(begin, 0x10000u), end));
+                    }
+                }
+
+                astral.Sort(static (a, b) => a.Begin.CompareTo(b.Begin));
+
+                s_BmpBits = bits;
+                s_AstralBegins = new uint[astral.Count];
+                s_AstralEnds = new uint[astral.Count];
+                for (var i = 0; i < astral.Count; i++) {
+                    (s_AstralBegins[i], s_AstralEnds[i]) = astral[i];
+                }
+            }
+
+            public static bool Contains(uint codepoint) {
+                if (codepoint <= 0xFFFF)
+                    return (s_BmpBits[codepoint >> 6] & (1UL << (int)(codepoint & 63))) != 0;
+
+                var index = Array.BinarySearch(s_AstralBegins, codepoint);
+                if (index >= 0)
+                    return true;
+
+                index = ~index - 1; // the last range starting before the codepoint
+                return index >= 0 && codepoint <= s_AstralEnds[index];
+            }
         }
 
         /// <summary>
@@ -315,27 +397,6 @@ namespace Vecerdi.Emoji {
         private static bool IsFlag(List<Codepoint> codepoints) {
             // Regional indicator symbols are in the range 0x1F1E6-0x1F1FF
             return codepoints.Count >= 2 && codepoints.All(cp => cp.Value is >= 0x1F1E6 and <= 0x1F1FF);
-        }
-
-        private static string CodepointsToString(ReadOnlySpan<Codepoint> codepoints) {
-            if (codepoints.IsEmpty)
-                return string.Empty;
-
-            // Estimate required capacity (1 or 2 chars per codepoint)
-            var estimatedCapacity = codepoints.Length * 2;
-            const int stackallocThreshold = 2048;
-            using var sb = estimatedCapacity <= stackallocThreshold
-                ? new ValueStringBuilder(stackalloc char[estimatedCapacity])
-                : new ValueStringBuilder(estimatedCapacity);
-
-            Span<ushort> utf16Chars = stackalloc ushort[2];
-            for (var i = 0; i < codepoints.Length; i++) {
-                var count = codepoints[i].AsUtf16(utf16Chars);
-                var cast = MemoryMarshal.Cast<ushort, char>(utf16Chars[..count]);
-                sb.Append(cast);
-            }
-
-            return sb.AsSpan().ToString();
         }
     }
 }
