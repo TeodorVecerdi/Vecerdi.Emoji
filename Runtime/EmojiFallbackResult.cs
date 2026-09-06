@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.Scripting.LifecycleManagement;
 
 namespace Vecerdi.Emoji;
 
 /// <summary>
 /// Represents the result of an emoji fallback operation
 /// </summary>
+[NoAutoStaticsCleanup]
 public readonly struct EmojiFallbackResult {
     /// <summary>
     /// Fallback emojis that should be used instead of the original
